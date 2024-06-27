@@ -151,6 +151,7 @@ components:
         value:
           description: "A nullable value of arbitrary type"
           nullable: true
+          type: object
   securitySchemes:
     api_key:
       type: apiKey

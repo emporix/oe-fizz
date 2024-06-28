@@ -116,9 +116,29 @@ func (g *Generator) SetSecuritySchemes(security map[string]*SecuritySchemeOrRef)
 	g.api.Components.SecuritySchemes = security
 }
 
+type Option func(*OpenAPI)
+
+func WithLabeledOperations(labels []string) Option {
+	return func(api *OpenAPI) {
+		api.IncludeLabels = labels
+	}
+}
+
 // API returns a copy of the internal OpenAPI object.
 func (g *Generator) API() *OpenAPI {
 	cpy := *g.api
+	return &cpy
+}
+
+func (g *Generator) GenerateOpenAPI(opts ...Option) *OpenAPI {
+	cpy := *g.api // TODO deep copy
+
+	for _, opt := range opts {
+		opt(&cpy)
+	}
+
+	g.clean(&cpy)
+
 	return &cpy
 }
 
@@ -265,6 +285,7 @@ func (g *Generator) AddOperation(path, method, tag string, in, out reflect.Type,
 		op.XCodeSamples = info.XCodeSamples
 		op.Security = info.Security
 		op.XInternal = info.XInternal
+		op.Labels = info.Labels
 	}
 	if tag != "" {
 		op.Tags = append(op.Tags, tag)
@@ -1232,6 +1253,41 @@ func (g *Generator) updateSchemaValidation(schema *Schema, sf reflect.StructFiel
 
 func (g *Generator) error(err error) {
 	g.errors = append(g.errors, err)
+}
+
+func (g *Generator) clean(o *OpenAPI) {
+	if len(o.Paths) == 0 {
+		return
+	}
+
+	openAPIIncludeLabels := make(map[string]struct{}, len(o.IncludeLabels))
+	for _, label := range o.IncludeLabels {
+		openAPIIncludeLabels[label] = struct{}{}
+	}
+
+	for path, pathItem := range o.Paths {
+		operations := GetOperations(pathItem)
+		for _, operation := range operations {
+			if operation == nil {
+				continue
+			}
+			if operation.Labels == nil {
+				break
+			}
+
+			keep := false
+			for _, label := range operation.Labels {
+				if _, ok := openAPIIncludeLabels[label]; ok {
+					keep = true
+					break
+				}
+			}
+
+			if !keep {
+				delete(o.Paths, path)
+			}
+		}
+	}
 }
 
 // fieldTagName returns the name of a struct field

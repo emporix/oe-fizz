@@ -267,9 +267,9 @@ func (g *RouterGroup) Handle(path, method string, infos []OperationOption, handl
 	return g
 }
 
-// OpenAPI returns a Gin HandlerFunc that serves
-// the marshalled OpenAPI specification of the API.
-func (f *Fizz) OpenAPI(info *openapi.Info, ct string) gin.HandlerFunc {
+// OpenAPI returns a Gin HandlerFunc that serves a copy of
+// the marshalled OpenAPI specification of the API with given options.
+func (f *Fizz) OpenAPI(info *openapi.Info, ct string, opts ...openapi.Option) gin.HandlerFunc {
 	f.gen.SetInfo(info)
 
 	ct = strings.ToLower(ct)
@@ -279,11 +279,11 @@ func (f *Fizz) OpenAPI(info *openapi.Info, ct string) gin.HandlerFunc {
 	switch ct {
 	case "json":
 		return func(c *gin.Context) {
-			c.JSON(200, f.gen.API())
+			c.JSON(200, f.gen.GenerateOpenAPI(opts...))
 		}
 	case "yaml":
 		return func(c *gin.Context) {
-			c.YAML(200, f.gen.API())
+			c.YAML(200, f.gen.GenerateOpenAPI(opts...))
 		}
 	}
 	panic("invalid content type, use JSON or YAML")
@@ -422,6 +422,14 @@ func WithoutSecurity() func(*openapi.OperationInfo) {
 func XInternal() func(*openapi.OperationInfo) {
 	return func(o *openapi.OperationInfo) {
 		o.XInternal = true
+	}
+}
+
+// Labels adds labels to the operation to be used for grouping.
+// This is not part of the OpenAPI spec.
+func Labels(labels []string) func(*openapi.OperationInfo) {
+	return func(o *openapi.OperationInfo) {
+		o.Labels = labels
 	}
 }
 

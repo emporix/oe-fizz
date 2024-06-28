@@ -15,6 +15,10 @@ type OperationInfo struct {
 	Security          []*SecurityRequirement
 	XCodeSamples      []*XCodeSample
 	XInternal         bool
+
+	// Labels is a list of labels that can be used to group operations.
+	// This is not part of the OpenAPI spec.
+	Labels []string
 }
 
 // ResponseHeader represents a single header that

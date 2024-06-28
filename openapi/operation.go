@@ -1,6 +1,6 @@
 package openapi
 
-// OperationInfo represents the informations of an operation
+// OperationInfo represents the information of an operation
 // that will be used when generating the OpenAPI specification.
 type OperationInfo struct {
 	ID                string

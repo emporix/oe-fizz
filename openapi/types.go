@@ -94,6 +94,7 @@ const (
 	TypeComplex
 
 	// Imported data types.
+
 	TypeUUID
 
 	TypeUnsupported
@@ -206,7 +207,7 @@ func stringToType(val string, t reflect.Type) (interface{}, error) {
 		// ParseBool returns an error if the value
 		// is invalid and cannot be converted to a
 		// boolean. We assume that invalid values
-		// are always falsy.
+		// are always false.
 		v, _ := strconv.ParseBool(val)
 		return v, nil
 	case reflect.String:

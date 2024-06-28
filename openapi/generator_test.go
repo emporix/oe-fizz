@@ -636,7 +636,7 @@ func TestSetOperationByMethod(t *testing.T) {
 		op := &Operation{
 			Description: desc,
 		}
-		setOperationBymethod(pi, op, method)
+		setOperationByMethod(pi, op, method)
 		assert.Equal(t, op, *ptr)
 		assert.Equal(t, desc, (*ptr).Description)
 	}

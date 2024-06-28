@@ -37,7 +37,7 @@ type Info struct {
 	XLogo          *XLogo   `json:"x-logo,omitempty" yaml:"x-logo,omitempty"`
 }
 
-// Contact represents the the contact informations
+// Contact represents the contact information
 // exposed for an API.
 type Contact struct {
 	Name  string `json:"name,omitempty" yaml:"name,omitempty"`
@@ -45,7 +45,7 @@ type Contact struct {
 	Email string `json:"email,omitempty" yaml:"email,omitempty"`
 }
 
-// License represents the license informations
+// License represents the license information
 // exposed for an API.
 type License struct {
 	Name string `json:"name" yaml:"name"`
@@ -202,8 +202,8 @@ type Operation struct {
 	XInternal    bool                   `json:"x-internal,omitempty" yaml:"x-internal,omitempty"`
 }
 
-// A workaround for missing omitnil functionality.
-// Explicitely omit the Security field from marshaling when it is nil, but not when empty.
+// A workaround for missing omit nil functionality.
+// Explicitly omit the Security field from marshaling when it is nil, but not when empty.
 type operationNilOmitted struct {
 	Tags         []string          `json:"tags,omitempty" yaml:"tags,omitempty"`
 	Summary      string            `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -252,7 +252,7 @@ func omitOperationNilFields(o *Operation) *operationNilOmitted {
 }
 
 // Responses represents a container for the expected responses
-// of an opration. It maps a HTTP response code to the expected
+// of an operation. It maps an HTTP response code to the expected
 // response.
 type Responses map[string]*ResponseOrRef
 
@@ -317,7 +317,7 @@ func (mtor *MediaTypeOrRef) MarshalYAML() (interface{}, error) {
 	return mtor.Reference, nil
 }
 
-// MediaType represents the type of a media.
+// MediaType represents the type of media.
 type MediaType struct {
 	Schema   *SchemaOrRef             `json:"schema" yaml:"schema"`
 	Example  interface{}              `json:"example,omitempty" yaml:"example,omitempty"`

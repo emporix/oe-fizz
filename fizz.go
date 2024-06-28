@@ -290,7 +290,7 @@ func (f *Fizz) OpenAPI(info *openapi.Info, ct string) gin.HandlerFunc {
 }
 
 // OperationOption represents an option-pattern function
-// used to add informations to an operation.
+// used to add information to an operation.
 type OperationOption func(*openapi.OperationInfo)
 
 // StatusDescription sets the default status description of the operation.
@@ -344,7 +344,7 @@ func Deprecated(deprecated bool) func(*openapi.OperationInfo) {
 	}
 }
 
-// Response adds an additional response to the operation.
+// Response adds another response to the operation.
 func Response(statusCode, desc string, model interface{}, headers []*openapi.ResponseHeader, example interface{}) func(*openapi.OperationInfo) {
 	return func(o *openapi.OperationInfo) {
 		o.Responses = append(o.Responses, &openapi.OperationResponse{
@@ -395,7 +395,7 @@ func XCodeSample(cs *openapi.XCodeSample) func(*openapi.OperationInfo) {
 	}
 }
 
-// Overrides top-level security requirement for this operation.
+// Security Overrides top-level security requirement for this operation.
 // Note that this function can be used more than once to add several requirements.
 func Security(security *openapi.SecurityRequirement) func(*openapi.OperationInfo) {
 	return func(o *openapi.OperationInfo) {
@@ -403,7 +403,7 @@ func Security(security *openapi.SecurityRequirement) func(*openapi.OperationInfo
 	}
 }
 
-// Add an empty security requirement to this operation to make other security requirements optional.
+// WithOptionalSecurity Add an empty security requirement to this operation to make other security requirements optional.
 func WithOptionalSecurity() func(*openapi.OperationInfo) {
 	return func(o *openapi.OperationInfo) {
 		var emptyRequirement openapi.SecurityRequirement = make(openapi.SecurityRequirement)
@@ -411,7 +411,7 @@ func WithOptionalSecurity() func(*openapi.OperationInfo) {
 	}
 }
 
-// Remove any top-level security requirements for this operation.
+// WithoutSecurity Remove any top-level security requirements for this operation.
 func WithoutSecurity() func(*openapi.OperationInfo) {
 	return func(o *openapi.OperationInfo) {
 		o.Security = []*openapi.SecurityRequirement{}

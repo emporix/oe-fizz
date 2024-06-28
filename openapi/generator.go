@@ -128,11 +128,11 @@ func (g *Generator) Errors() []error {
 	return g.errors
 }
 
-// UseFullSchemaNames defines whether the generator should generates
+// UseFullSchemaNames defines whether the generator should generate
 // a full name for the components using the package name of the type
 // as a prefix.
 // Omitting the package part of the name increases the risks of conflicts.
-// It is the responsibility of the developper to ensure that unique type
+// It is the responsibility of the developer to ensure that unique type
 // names are used across all the packages of the application.
 // Default to true.
 func (g *Generator) UseFullSchemaNames(b bool) {
@@ -164,7 +164,7 @@ func (g *Generator) OverrideTypeName(t reflect.Type, name string) error {
 		t = t.Elem()
 	}
 	if _, ok := g.typeNames[t]; ok {
-		return errors.New("type name already overrided")
+		return errors.New("type name already overwritten")
 	}
 	g.typeNames[t] = name
 
@@ -172,7 +172,7 @@ func (g *Generator) OverrideTypeName(t reflect.Type, name string) error {
 }
 
 // OverrideDataType registers a custom schema type and
-// format for the given type that will overrided the
+// format for the given type that will override the
 // default generation.
 func (g *Generator) OverrideDataType(t reflect.Type, typ, format string) error {
 	if typ == "" {
@@ -182,7 +182,7 @@ func (g *Generator) OverrideDataType(t reflect.Type, typ, format string) error {
 		t = t.Elem()
 	}
 	if _, ok := g.dataTypes[t]; ok {
-		return errors.New("data type already overrided")
+		return errors.New("data type already overwritten")
 	}
 	g.dataTypes[t] = &OverridedDataType{
 		format: format,
@@ -233,7 +233,7 @@ func (g *Generator) AddTag(name, desc string) {
 
 // AddOperation add a new operation to the OpenAPI specification
 // using the method and path of the route and the tonic
-// handler informations.
+// handler information.
 func (g *Generator) AddOperation(path, method, tag string, in, out reflect.Type, info *OperationInfo) (*Operation, error) {
 	op := &Operation{
 		ID: uuid.Must(uuid.NewV4()).String(),
@@ -247,7 +247,7 @@ func (g *Generator) AddOperation(path, method, tag string, in, out reflect.Type,
 		}
 		g.operationsIDS[info.ID] = struct{}{}
 	}
-	// If a PathItem does not exists for this
+	// If a PathItem does not exist for this
 	// path, create a new one.
 	item, ok := g.api.Paths[path]
 	if !ok {
@@ -293,7 +293,7 @@ func (g *Generator) AddOperation(path, method, tag string, in, out reflect.Type,
 		return nil, err
 	}
 	// Generate additional responses from the operation
-	// informations.
+	// information.
 	for _, resp := range info.Responses {
 		if resp != nil {
 			if err := g.setOperationResponse(op,
@@ -309,7 +309,7 @@ func (g *Generator) AddOperation(path, method, tag string, in, out reflect.Type,
 			}
 		}
 	}
-	setOperationBymethod(item, op, method)
+	setOperationByMethod(item, op, method)
 
 	return op, nil
 }
@@ -321,9 +321,9 @@ func rewritePath(path string) string {
 	return ginPathParamRe.ReplaceAllString(path, "/{$1}")
 }
 
-// setOperationBymethod sets the operation op to the appropriate
+// setOperationByMethod sets the operation op to the appropriate
 // field of item according to the given method.
-func setOperationBymethod(item *PathItem, op *Operation, method string) {
+func setOperationByMethod(item *PathItem, op *Operation, method string) {
 	switch method {
 	case "GET":
 		item.GET = op
@@ -514,7 +514,7 @@ func (g *Generator) buildParamsRecursive(op *Operation, t, parent reflect.Type, 
 			}
 			// Do not ignore embedded fields of unexported struct
 			// types since they may have exported fields, and recursively
-			// use its fields as operations params. This allow developers
+			// use its fields as operations params. This allows developers
 			// to reuse input models using type composition.
 			if sft.Kind() == reflect.Struct {
 				// If the type of the embedded struct is the same as
@@ -585,7 +585,7 @@ func (g *Generator) addStructFieldToOperation(op *Operation, t reflect.Type, idx
 			return nil
 		}
 		// If binding is disabled for this field, don't
-		// add it to the request body. This allow using
+		// add it to the request body. This allows using
 		// a model type as an operation input while also
 		// omitting some fields that are computed by the
 		// server.
@@ -753,7 +753,7 @@ func (g *Generator) newSchemaFromStructField(sf reflect.StructField, required bo
 	}
 	// Get the underlying schema, it may be a reference
 	// to a component, and update its fields using the
-	// informations in the struct field tags.
+	// information in the struct field tags.
 	schema := g.resolveSchema(sor)
 
 	if schema == nil {
@@ -810,7 +810,7 @@ func (g *Generator) newSchemaFromStructField(sf reflect.StructField, required bo
 	// spec based on the content of the validator tag.
 	schema = g.updateSchemaValidation(schema, sf)
 
-	// Allow overidding schema properties that were
+	// Allow overriding schema properties that were
 	// auto inferred manually via tags.
 	if t, ok := sf.Tag.Lookup(formatTag); ok {
 		schema.Format = t
@@ -990,7 +990,7 @@ func (g *Generator) newSchemaFromStruct(t reflect.Type) *SchemaOrRef {
 
 	sor := &SchemaOrRef{Schema: schema}
 
-	// Register the schema within the speccomponents and return a
+	// Register the schema within the spec components and return a
 	// relative reference. Unnamed types, like anonymous structs,
 	// will always be inlined in the specification.
 	if name != "" {
@@ -1167,7 +1167,7 @@ func (g *Generator) typeName(t reflect.Type) string {
 	return strings.Title(pkg) + strings.Title(typ)
 }
 
-// updateSchemaValidation fills the fields of the schema
+// updateSchemaValidation fills the fields with the schema
 // related to the JSON Schema Validation RFC based on the
 // content of the validator tag.
 // see https://godoc.org/gopkg.in/go-playground/validator.v8

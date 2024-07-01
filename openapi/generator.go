@@ -1275,7 +1275,7 @@ func (g *Generator) clean(o *OpenAPI) {
 				continue
 			}
 			if operation.Labels == nil {
-				break
+				continue
 			}
 
 			keep := false

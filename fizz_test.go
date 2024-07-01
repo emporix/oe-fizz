@@ -3,6 +3,8 @@ package fizz
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -444,6 +446,162 @@ func TestSpecHandler(t *testing.T) {
 	}
 }
 
+// TestSpecHandler tests that the OpenAPI handler
+// return the spec properly cleaning up the labeled operations.
+func TestSpecHandlerWithLabels(t *testing.T) {
+	fizz := New()
+
+	fizz.GET("/test/:a",
+		[]OperationOption{
+			ID("GetTest"),
+			Summary("Test"),
+			Description("Test route"),
+			StatusDescription("200"),
+			StatusDescription("OK"),
+			Deprecated(true),
+			// Override summary and description
+			// with printf-like options.
+			Summaryf("Test-%s", "A"),
+			Descriptionf("Test %s", "routes"),
+			// Headers.
+			Header("X-Request-Id", "Unique request ID", String),
+			// Additional responses.
+			Response("429", "", String, []*openapi.ResponseHeader{
+				{
+					Name:        "X-Rate-Limit",
+					Description: "Rate limit",
+					Model:       Integer,
+				},
+			}, nil),
+			Response("404", "", String, nil, "not-found-example"),
+			ResponseWithExamples("400", "", String, nil, map[string]interface{}{
+				"one": "message1",
+				"two": "message2",
+			}),
+			XCodeSample(&openapi.XCodeSample{
+				Lang:   "Shell",
+				Label:  "v4.4",
+				Source: "curl http://0.0.0.0:8080",
+			}),
+			// Explicit override for SecurityRequirement (allow-all)
+			WithoutSecurity(),
+			XInternal(),
+			Labels([]string{"label1"}),
+		},
+		tonic.Handler(func(c *gin.Context, in *testInputModel1) (*T, error) {
+			return &T{}, nil
+		}, 200),
+	)
+
+	fizz.GET("/test/:a/:b", []OperationOption{
+		ID("GetTest2"),
+		InputModel(&testInputModel{}),
+		WithOptionalSecurity(),
+		Security(&openapi.SecurityRequirement{"oauth2": []string{"write:pets", "read:pets"}}),
+		Labels([]string{"label2", "label3"}),
+	}, tonic.Handler(func(c *gin.Context) error {
+		return nil
+	}, 200))
+	infos := &openapi.Info{
+		Title:       "Test Server",
+		Description: `This is a test server.`,
+		Version:     "1.0.0",
+	}
+
+	fizz.POST("/test/:c",
+		[]OperationOption{
+			ID("PostTest"),
+			StatusDescription("201"),
+			StatusDescription("Created"),
+		},
+		tonic.Handler(func(c *gin.Context, in *testInputModel2) error {
+			return nil
+		}, 201),
+	)
+
+	servers := []*openapi.Server{
+		{
+			URL:         "https://foo.bar/{basePath}",
+			Description: "Such Server, Very Wow",
+			Variables: map[string]*openapi.ServerVariable{
+				"basePath": {
+					Default:     "v2",
+					Description: "version of the API",
+					Enum:        []string{"v1", "v2", "beta"},
+				},
+			},
+		},
+	}
+	fizz.Generator().SetServers(servers)
+
+	security := []*openapi.SecurityRequirement{
+		{"api_key": []string{}},
+		{"oauth2": []string{"write:pets", "read:pets"}},
+	}
+	fizz.Generator().SetSecurityRequirement(security)
+
+	fizz.Generator().API().Components.SecuritySchemes = map[string]*openapi.SecuritySchemeOrRef{
+		"api_key": {
+			SecurityScheme: &openapi.SecurityScheme{
+				Type: "apiKey",
+				Name: "api_key",
+				In:   "header",
+			},
+		},
+		"oauth2": {
+			SecurityScheme: &openapi.SecurityScheme{
+				Type: "oauth2",
+				Flows: &openapi.OAuthFlows{
+					Implicit: &openapi.OAuthFlow{
+						AuthorizationURL: "https://example.com/api/oauth/dialog",
+						Scopes: map[string]string{
+							"write:pets": "modify pets in your account",
+							"read:pets":  "read your pets",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	fizz.GET("/openapi.json", nil, fizz.OpenAPI(infos, "", openapi.WithLabeledOperations([]string{"label2"}))) // default is JSON
+	fizz.GET("/openapi.yaml", nil, fizz.OpenAPI(infos, "yaml", openapi.WithLabeledOperations([]string{"label2"})))
+
+	srv := httptest.NewServer(fizz)
+	defer srv.Close()
+
+	c := srv.Client()
+	c.Timeout = 1 * time.Second
+
+	respJSON, err := c.Get(srv.URL + "/openapi.json")
+	if err != nil {
+		t.Error(err)
+	}
+	defer respJSON.Body.Close()
+
+	assert.Equal(t, 200, respJSON.StatusCode)
+	specJSON, err := io.ReadAll(respJSON.Body)
+	require.NoError(t, err)
+
+	expectedJSON, err := os.ReadFile("testdata/label_spec.json")
+	require.NoError(t, err)
+	assert.JSONEq(t, string(expectedJSON), string(specJSON))
+
+	respYAML, err := c.Get(srv.URL + "/openapi.yaml")
+	if err != nil {
+		t.Error(err)
+	}
+	defer respYAML.Body.Close()
+
+	assert.Equal(t, 200, respYAML.StatusCode)
+	specYAML, err := io.ReadAll(respYAML.Body)
+	require.NoError(t, err)
+
+	expectedYAML, err := os.ReadFile("testdata/label_spec.yaml")
+	require.NoError(t, err)
+	assert.YAMLEq(t, string(expectedYAML), string(specYAML))
+}
+
 // TestInvalidContentTypeOpenAPIHandler tests that the
 // OpenAPI handler will panic if the given content type
 // is invalid.
@@ -558,6 +716,13 @@ func TestOperationContext(t *testing.T) {
 			status, http.StatusOK,
 		)
 	}
+}
+
+func TestLabels(t *testing.T) {
+	operationInfo := &openapi.OperationInfo{}
+	require.Nil(t, operationInfo.Labels)
+	Labels([]string{"label1", "label2"})(operationInfo)
+	assert.Equal(t, []string{"label1", "label2"}, operationInfo.Labels)
 }
 
 func diffJSON(a, b []byte) (bool, error) {

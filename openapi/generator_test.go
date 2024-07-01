@@ -1032,3 +1032,12 @@ func gen(t *testing.T) *Generator {
 
 	return g
 }
+
+func TestIncludeLabels(t *testing.T) {
+	g := gen(t)
+
+	labels := []string{"first", "second"}
+	result := g.GenerateOpenAPI(WithLabeledOperations(labels))
+
+	assert.Equal(t, labels, result.IncludeLabels)
+}

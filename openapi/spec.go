@@ -1,6 +1,8 @@
 package openapi
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // OpenAPI represents the root document object of
 // an OpenAPI document.
@@ -13,6 +15,29 @@ type OpenAPI struct {
 	Tags       []*Tag                 `json:"tags,omitempty" yaml:"tags,omitempty"`
 	Security   []*SecurityRequirement `json:"security,omitempty" yaml:"security,omitempty"`
 	XTagGroups []*XTagGroup           `json:"x-tagGroups,omitempty" yaml:"x-tagGroups,omitempty"`
+
+	// Internal options. These are not part of the OpenAPI spec.
+	// IncludeLabels is a list of labels to include those endpoints in the generated OpenAPI spec.
+	// By default, labeled endpoints are not included.
+	IncludeLabels []string `json:"-" yaml:"-"`
+}
+
+func Clone(o *OpenAPI) (OpenAPI, error) {
+	var newCopy OpenAPI
+
+	data, err := json.Marshal(o)
+	if err != nil {
+		return OpenAPI{}, err
+	}
+
+	err = json.Unmarshal(data, &newCopy)
+	if err != nil {
+		return OpenAPI{}, err
+	}
+
+	newCopy.IncludeLabels = o.IncludeLabels
+
+	return newCopy, nil
 }
 
 // Components holds a set of reusable objects for different
@@ -87,6 +112,10 @@ type PathItem struct {
 	TRACE       *Operation        `json:"trace,omitempty" yaml:"trace,omitempty"`
 	Servers     []*Server         `json:"servers,omitempty" yaml:"servers,omitempty"`
 	Parameters  []*ParameterOrRef `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+}
+
+func GetOperations(p *PathItem) []*Operation {
+	return []*Operation{p.GET, p.PUT, p.POST, p.DELETE, p.OPTIONS, p.HEAD, p.PATCH, p.TRACE}
 }
 
 // Reference is a simple object to allow referencing
@@ -200,6 +229,10 @@ type Operation struct {
 	Security     []*SecurityRequirement `json:"security" yaml:"security"`
 	XCodeSamples []*XCodeSample         `json:"x-codeSamples,omitempty" yaml:"x-codeSamples,omitempty"`
 	XInternal    bool                   `json:"x-internal,omitempty" yaml:"x-internal,omitempty"`
+
+	// Labels is a list of labels that can be used to group operations.
+	// This is not part of the OpenAPI spec.
+	Labels []string `json:"-" yaml:"-"`
 }
 
 // A workaround for missing omit nil functionality.

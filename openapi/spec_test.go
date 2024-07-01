@@ -1,9 +1,34 @@
 package openapi
 
 import (
+	"encoding/json"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"os"
 	"reflect"
 	"testing"
 )
+
+// TestClone tests that the Clone function creates a deep copy of the OpenAPI object.
+func TestClone(t *testing.T) {
+	specData, err := os.ReadFile("../testdata/spec.json")
+	require.NoError(t, err)
+
+	var original OpenAPI
+	err = json.Unmarshal(specData, &original)
+	require.NoError(t, err)
+
+	clone, err := Clone(&original)
+	require.NoError(t, err)
+
+	originalJSON, err := json.Marshal(original)
+	require.NoError(t, err)
+
+	cloneJSON, err := json.Marshal(clone)
+	require.NoError(t, err)
+
+	assert.JSONEq(t, string(originalJSON), string(cloneJSON))
+}
 
 // TestYAMLMarshalingRefs tests that spec types
 // that contains embedded references  are properly

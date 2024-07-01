@@ -37,6 +37,33 @@ func Clone(o *OpenAPI) (OpenAPI, error) {
 
 	newCopy.IncludeLabels = o.IncludeLabels
 
+	for path, pathItem := range o.Paths {
+		if pathItem.GET != nil {
+			newCopy.Paths[path].GET.Labels = pathItem.GET.Labels
+		}
+		if pathItem.PUT != nil {
+			newCopy.Paths[path].PUT.Labels = pathItem.PUT.Labels
+		}
+		if pathItem.POST != nil {
+			newCopy.Paths[path].POST.Labels = pathItem.POST.Labels
+		}
+		if pathItem.DELETE != nil {
+			newCopy.Paths[path].DELETE.Labels = pathItem.DELETE.Labels
+		}
+		if pathItem.OPTIONS != nil {
+			newCopy.Paths[path].OPTIONS.Labels = pathItem.OPTIONS.Labels
+		}
+		if pathItem.HEAD != nil {
+			newCopy.Paths[path].HEAD.Labels = pathItem.HEAD.Labels
+		}
+		if pathItem.PATCH != nil {
+			newCopy.Paths[path].PATCH.Labels = pathItem.PATCH.Labels
+		}
+		if pathItem.TRACE != nil {
+			newCopy.Paths[path].TRACE.Labels = pathItem.TRACE.Labels
+		}
+	}
+
 	return newCopy, nil
 }
 

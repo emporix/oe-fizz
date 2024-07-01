@@ -449,6 +449,70 @@ func TestSpecHandler(t *testing.T) {
 // TestSpecHandler tests that the OpenAPI handler
 // return the spec properly cleaning up the labeled operations.
 func TestSpecHandlerWithLabels(t *testing.T) {
+	type testCase struct {
+		name             string
+		labels           []string
+		expectedJSONFile string
+		expectedYAMLFile string
+	}
+
+	cases := []testCase{
+		{
+			name:             "it includes operation with given label",
+			labels:           []string{"label2"},
+			expectedJSONFile: "testdata/label_spec_label2.json",
+			expectedYAMLFile: "testdata/label_spec_label2.yaml",
+		},
+		{
+			name:             "it includes operation with no labels when no labels are given",
+			expectedJSONFile: "testdata/label_spec_no_label.json",
+			expectedYAMLFile: "testdata/label_spec_no_label.yaml",
+		},
+	}
+
+	for _, tc := range cases {
+		sut, infos := getLabeledFizz()
+
+		sut.GET("/openapi.json", nil, sut.OpenAPI(infos, "", openapi.WithLabeledOperations(tc.labels))) // default is JSON
+		sut.GET("/openapi.yaml", nil, sut.OpenAPI(infos, "yaml", openapi.WithLabeledOperations(tc.labels)))
+
+		srv := httptest.NewServer(sut)
+		defer srv.Close()
+
+		c := srv.Client()
+		c.Timeout = 1 * time.Second
+
+		respJSON, err := c.Get(srv.URL + "/openapi.json")
+		if err != nil {
+			t.Error(err)
+		}
+		defer respJSON.Body.Close()
+
+		assert.Equal(t, 200, respJSON.StatusCode)
+		specJSON, err := io.ReadAll(respJSON.Body)
+		require.NoError(t, err)
+
+		expectedJSON, err := os.ReadFile(tc.expectedJSONFile)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(expectedJSON), string(specJSON))
+
+		respYAML, err := c.Get(srv.URL + "/openapi.yaml")
+		if err != nil {
+			t.Error(err)
+		}
+		defer respYAML.Body.Close()
+
+		assert.Equal(t, 200, respYAML.StatusCode)
+		specYAML, err := io.ReadAll(respYAML.Body)
+		require.NoError(t, err)
+
+		expectedYAML, err := os.ReadFile(tc.expectedYAMLFile)
+		require.NoError(t, err)
+		assert.YAMLEq(t, string(expectedYAML), string(specYAML))
+	}
+}
+
+func getLabeledFizz() (*Fizz, *openapi.Info) {
 	fizz := New()
 
 	fizz.GET("/test/:a",
@@ -563,43 +627,7 @@ func TestSpecHandlerWithLabels(t *testing.T) {
 			},
 		},
 	}
-
-	fizz.GET("/openapi.json", nil, fizz.OpenAPI(infos, "", openapi.WithLabeledOperations([]string{"label2"}))) // default is JSON
-	fizz.GET("/openapi.yaml", nil, fizz.OpenAPI(infos, "yaml", openapi.WithLabeledOperations([]string{"label2"})))
-
-	srv := httptest.NewServer(fizz)
-	defer srv.Close()
-
-	c := srv.Client()
-	c.Timeout = 1 * time.Second
-
-	respJSON, err := c.Get(srv.URL + "/openapi.json")
-	if err != nil {
-		t.Error(err)
-	}
-	defer respJSON.Body.Close()
-
-	assert.Equal(t, 200, respJSON.StatusCode)
-	specJSON, err := io.ReadAll(respJSON.Body)
-	require.NoError(t, err)
-
-	expectedJSON, err := os.ReadFile("testdata/label_spec.json")
-	require.NoError(t, err)
-	assert.JSONEq(t, string(expectedJSON), string(specJSON))
-
-	respYAML, err := c.Get(srv.URL + "/openapi.yaml")
-	if err != nil {
-		t.Error(err)
-	}
-	defer respYAML.Body.Close()
-
-	assert.Equal(t, 200, respYAML.StatusCode)
-	specYAML, err := io.ReadAll(respYAML.Body)
-	require.NoError(t, err)
-
-	expectedYAML, err := os.ReadFile("testdata/label_spec.yaml")
-	require.NoError(t, err)
-	assert.YAMLEq(t, string(expectedYAML), string(specYAML))
+	return fizz, infos
 }
 
 // TestInvalidContentTypeOpenAPIHandler tests that the

@@ -131,7 +131,10 @@ func (g *Generator) API() *OpenAPI {
 }
 
 func (g *Generator) GenerateOpenAPI(opts ...Option) *OpenAPI {
-	cpy := *g.api // TODO deep copy
+	cpy, err := Clone(g.api)
+	if err != nil {
+		panic(err)
+	}
 
 	for _, opt := range opts {
 		opt(&cpy)

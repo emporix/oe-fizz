@@ -1270,10 +1270,13 @@ func (g *Generator) clean(o *OpenAPI) {
 
 	for path, pathItem := range o.Paths {
 		operations := GetOperations(pathItem)
+		affectedOperations := 0
+		totalOperations := 0
 		for _, operation := range operations {
 			if operation == nil {
 				continue
 			}
+			totalOperations++
 			if operation.Labels == nil {
 				continue
 			}
@@ -1287,9 +1290,49 @@ func (g *Generator) clean(o *OpenAPI) {
 			}
 
 			if !keep {
-				delete(o.Paths, path)
+				affectedOperations++
+				removeOperation(pathItem, operation)
 			}
 		}
+
+		if affectedOperations == totalOperations {
+			delete(o.Paths, path)
+		}
+	}
+}
+
+func removeOperation(pathItem *PathItem, operation *Operation) {
+	if pathItem.GET == operation {
+		pathItem.GET = nil
+		return
+	}
+	if pathItem.PUT == operation {
+		pathItem.PUT = nil
+		return
+	}
+	if pathItem.POST == operation {
+		pathItem.POST = nil
+		return
+	}
+	if pathItem.DELETE == operation {
+		pathItem.DELETE = nil
+		return
+	}
+	if pathItem.OPTIONS == operation {
+		pathItem.OPTIONS = nil
+		return
+	}
+	if pathItem.HEAD == operation {
+		pathItem.HEAD = nil
+		return
+	}
+	if pathItem.PATCH == operation {
+		pathItem.PATCH = nil
+		return
+	}
+	if pathItem.TRACE == operation {
+		pathItem.TRACE = nil
+		return
 	}
 }
 
